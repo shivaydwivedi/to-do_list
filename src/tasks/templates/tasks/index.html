@@ -1,0 +1,64 @@
+<!-- tasks/templates/tasks/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do App</title>
+</head>
+<body>
+  <h1>To-Do List</h1>
+
+  <input type="text" id="task-input" placeholder="New Task..." />
+  <button onclick="addTask()">Add</button>
+
+  <ul id="task-list"></ul>
+
+  <script>
+    const apiURL = "http://127.0.0.1:8000/api/tasks/";
+
+    async function getTasks() {
+      const res = await fetch(apiURL);
+      const tasks = await res.json();
+      const list = document.getElementById("task-list");
+      list.innerHTML = "";
+      tasks.forEach(task => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          ${task.title} ${task.completed ? "✅" : ""}
+          <button onclick="toggleComplete(${task.id}, ${task.completed})">Toggle</button>
+          <button onclick="deleteTask(${task.id})">❌</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const title = document.getElementById("task-input").value;
+      if (!title) return;
+      await fetch(apiURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, completed: false })
+      });
+      document.getElementById("task-input").value = "";
+      getTasks();
+    }
+
+    async function toggleComplete(id, currentStatus) {
+      await fetch(`${apiURL}${id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !currentStatus })
+      });
+      getTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`${apiURL}${id}/`, { method: "DELETE" });
+      getTasks();
+    }
+
+    getTasks();
+  </script>
+</body>
+</html>
